@@ -1,47 +1,76 @@
 <?php
 
-/*  getMenu
+/**
+ * Définition des constantes de connexion à la base de données.
+ *
+ * HOST : Nom d'hôte du serveur de base de données, ici "localhost".
+ * DBNAME : Nom de la base de données
+ * DBLOGIN : Nom d'utilisateur pour se connecter à la base de données.
+ * DBPWD : Mot de passe pour se connecter à la base de données.
+ */
+define("HOST", "localhost");
+define("DBNAME", "mora");
+define("DBLOGIN", "root");
+define("DBPWD", "root");
 
-    . paramètre $s : le numéro de la semaine demandée
-    . paramètre $j : le jour du menu demandé
-    > valeur de retour : un objet avec 3 propriétés entree, plat dessert décrivant le menu du jour $j
-
-    La fonction getMenu se connecte à votre BDD et récupère de la table Repas 
-    le menu du jour $j de la semaine $s.
-*/
-function getMenu($s, $j){
-    $cnx = new PDO("mysql:host=localhost;dbname=???", "???", "???");
-    $answer = $cnx->query("select entree, plat, dessert from Repas where semaine='$s' and jour='$j'"); 
-    $res = $answer->fetchAll(PDO::FETCH_OBJ);
-    return $res;
+/**
+ * Récupère le menu pour un jour spécifique dans la base de données.
+ *
+ * @param string $w La semaine pour laquelle le menu est récupéré.
+ * @param string $j Le jour pour lequel le menu est récupéré.
+ * @return array Un tableau d'objets contenant l'entrée, le plat principal et le dessert pour le jour spécifié.
+ */
+function getMenu($w, $j){
+    // Connexion à la base de données
+    $cnx = new PDO("mysql:host=".HOST.";dbname=".DBNAME, DBLOGIN, DBPWD);
+    // Requête SQL pour récupérer le menu avec des paramètres
+    $sql = "select entree, plat, dessert from Repas where jour=:jour and semaine=:semaine";
+    // Prépare la requête SQL
+    $stmt = $cnx->prepare($sql);
+    // Lie le paramètre à la valeur
+    $stmt->bindParam(':jour', $j);
+    $stmt->bindParam(':semaine', $w);
+    // Exécute la requête SQL
+    $stmt->execute();
+    // Récupère les résultats de la requête sous forme d'objets
+    $res = $stmt->fetchAll(PDO::FETCH_OBJ);
+    return $res; // Retourne les résultats
 }
 
 
-/*  updateMenu
-
-    . paramètre $s : le numéro de la semaine demandée
-    . paramètre $j : le jour du menu concerné
-    . paramètre $e : la nouvelle entrée du menu
-    . paramètre $p : le  nouveau plat du menu
-    . paramètre $d : le nouveau dessert du menu
-    > valeur de retour : le nombre de ligne modifié dans Repas (donc 1 si tout va bien, 0 sinon)
-
-    La fonction updateMenu se connecte à votre BDD et met à jour la table Repas
-    avec le nouveau menu donné en paramètre pour le jour $j de la semaine $s.
-*/
-function updateMenu($s, $j, $e, $p, $d){
-    $cnx = new PDO("mysql:host=localhost;dbname=???", "???", "???");
-    $answer = $cnx->query("replace into Repas set entree='$e', plat='$p', dessert='$d', semaine='$s', jour='$j'"); 
-    $res = $answer->rowCount();
-    return $res;
+/**
+ * Met à jour le menu pour un jour spécifique dans la base de données.
+ *
+ * @param string $w La semaine pour laquelle le menu est mis à jour.
+ * @param string $j Le jour pour lequel le menu est mis à jour.
+ * @param string $e La nouvelle entrée pour le menu.
+ * @param string $p Le nouveau plat principal pour le menu.
+ * @param string $d Le nouveau dessert pour le menu.
+ * @return int Le nombre de lignes affectées par la requête de mise à jour.
+ * 
+ * A SAVOIR: une requête SQL de type update retourne le nombre de lignes affectées par la requête.
+ * Si la requête a réussi, le nombre de lignes affectées sera 1.
+ * Si la requête a échoué, le nombre de lignes affectées sera 0.
+ */
+function updateMenu($w, $j, $e, $p, $d){
+    // Connexion à la base de données
+    $cnx = new PDO("mysql:host=".HOST.";dbname=".DBNAME, DBLOGIN, DBPWD); 
+    // Requête SQL de mise à jour du menu avec des paramètres
+    $sql = "REPLACE INTO Repas (semaine, jour, entree, plat, dessert) 
+            VALUES (:semaine, :jour, :entree, :plat, :dessert)";
+    // Prépare la requête SQL
+    $stmt = $cnx->prepare($sql);
+    // Lie les paramètres aux valeurs
+    $stmt->bindParam(':entree', $e);
+    $stmt->bindParam(':plat', $p);
+    $stmt->bindParam(':dessert', $d);
+    $stmt->bindParam(':jour', $j);
+    $stmt->bindParam(':semaine', $w);
+    // Exécute la requête SQL
+    $stmt->execute();
+    // Récupère le nombre de lignes affectées par la requête
+    $res = $stmt->rowCount(); 
+    return $res; // Retourne le nombre de lignes affectées
 }
 
-/*  deleteMenu
 
-    . paramètre $s : le numéro de la semaine demandée
-    . paramètre $j : le jour du menu concerné
-    > valeur de retour : le nombre de ligne modifié dans Repas (donc 1 si tout va bien, 0 sinon)
-
-    La fonction deleteMenu se connecte à votre BDD et supprime le menu du jour $j de la semaine $s.
-*/
-// TODO Q2
